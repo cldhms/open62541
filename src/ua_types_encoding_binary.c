@@ -488,7 +488,7 @@ Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
     /* Filter out arrays that can obviously not be decoded, because the message
      * is too small for the array length. This prevents the allocation of very
      * long arrays for bogus messages.*/
-    size_t length = (size_t)signed_length;
+    size_t length = (size_t)(*out_length);
     UA_CHECK(ctx->pos + ((type->memSize * length) / 32) <= ctx->end,
              return UA_STATUSCODE_BADDECODINGERROR);
 
