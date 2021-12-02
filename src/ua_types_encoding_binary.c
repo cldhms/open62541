@@ -474,7 +474,7 @@ Array_decodeBinaryLength(void *UA_RESTRICT *UA_RESTRICT dst,
         return UA_STATUSCODE_GOOD;
     }
 
-    *out_length = (u32)signed_length;
+    *out_length = (size_t)signed_length;
     return UA_STATUSCODE_GOOD;
 }
 
@@ -486,7 +486,7 @@ Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
     /* Decode the length */
     status ret = Array_decodeBinaryLength(dst, &length, ctx);
     if(ret != UA_STATUSCODE_GOOD || length == 0) {
-        *out_length = length;
+        *out_length = 0;
         return ret;
     }
 
