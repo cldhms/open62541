@@ -454,7 +454,7 @@ Array_encodeBinary(const void *src, size_t length, const UA_DataType *type, Ctx 
     UA_assert(ret != UA_STATUSCODE_BADENCODINGLIMITSEXCEEDED);
     return ret;
 }
-#if 0
+
 static status
 Array_decodeBinaryLength(void *UA_RESTRICT *UA_RESTRICT dst,
                          size_t *out_length, Ctx *ctx) {
@@ -474,36 +474,25 @@ Array_decodeBinaryLength(void *UA_RESTRICT *UA_RESTRICT dst,
         return UA_STATUSCODE_GOOD;
     }
 
-    *out_length = (size_t)signed_length;
+    *out_length = (u32)signed_length;
     return UA_STATUSCODE_GOOD;
 }
-#endif
 
 static status
 Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
                    const UA_DataType *type, Ctx *ctx) {
-   /* Decode the length */
-   i32 signed_length;
-   status ret = DECODE_DIRECT(&signed_length, UInt32); /* Int32 */
-   if(ret != UA_STATUSCODE_GOOD)
-       return ret;
+    size_t length;
 
-   /* Return early for empty arrays */
-   if(signed_length <= 0) {
-       *out_length = 0;
-       if(signed_length < 0)
-           *dst = NULL;
-       else
-           *dst = UA_EMPTY_ARRAY_SENTINEL;
-       return UA_STATUSCODE_GOOD;
-   }
-
-   *out_length = (size_t)signed_length;
+    /* Decode the length */
+    status ret = Array_decodeBinaryLength(dst, &length, ctx);
+    if(ret != UA_STATUSCODE_GOOD || length == 0) {
+        *out_length = length;
+        return ret;
+    }
 
     /* Filter out arrays that can obviously not be decoded, because the message
      * is too small for the array length. This prevents the allocation of very
      * long arrays for bogus messages.*/
-    size_t length = (size_t)(*out_length);
     UA_CHECK(ctx->pos + ((type->memSize * length) / 32) <= ctx->end,
              return UA_STATUSCODE_BADDECODINGERROR);
 
