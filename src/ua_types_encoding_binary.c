@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  *    Copyright 2020 (c) Fraunhofer IOSB (Author: Andreas Ebner)
  *    Copyright 2020 (c) Grigory Friedman
@@ -456,12 +456,13 @@ Array_encodeBinary(const void *src, size_t length, const UA_DataType *type, Ctx 
 }
 
 static status
-Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
-                   const UA_DataType *type, Ctx *ctx) {
+Array_decodeBinaryLength(void *UA_RESTRICT *UA_RESTRICT dst,
+                         size_t *out_length, Ctx *ctx) {
     /* Decode the length */
     i32 signed_length;
     status ret = DECODE_DIRECT(&signed_length, UInt32); /* Int32 */
-    UA_CHECK_STATUS(ret, return ret);
+    if(ret != UA_STATUSCODE_GOOD)
+        return ret;
 
     /* Return early for empty arrays */
     if(signed_length <= 0) {
@@ -473,10 +474,22 @@ Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
         return UA_STATUSCODE_GOOD;
     }
 
+    *out_length = (u32)signed_length;
+    return UA_STATUSCODE_GOOD;
+}
+
+static status
+Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
+                   const UA_DataType *type, Ctx *ctx) {
+    /* Decode the length */
+    status ret = Array_decodeBinaryLength(dst, out_length, ctx);
+    if(ret != UA_STATUSCODE_GOOD || *out_length == 0)
+        return ret;
+
     /* Filter out arrays that can obviously not be decoded, because the message
      * is too small for the array length. This prevents the allocation of very
      * long arrays for bogus messages.*/
-    size_t length = (size_t)signed_length;
+    size_t length = *out_length;
     UA_CHECK(ctx->pos + ((type->memSize * length) / 32) <= ctx->end,
              return UA_STATUSCODE_BADDECODINGERROR);
 
@@ -1188,7 +1201,7 @@ ENCODE_BINARY(DiagnosticInfo) {
     encodingMask |= (u8)(src->hasAdditionalInfo << 4u);
     encodingMask |= (u8)(src->hasInnerStatusCode << 5u);
     encodingMask |= (u8)(src->hasInnerDiagnosticInfo << 6u);
-    
+
     /* Encode the numeric content */
     status ret = ENCODE_DIRECT(&encodingMask, Byte);
     if(src->hasSymbolicId)
