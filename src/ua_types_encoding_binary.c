@@ -483,7 +483,7 @@ Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
                    const UA_DataType *type, Ctx *ctx) {
     /* Decode the length */
     status ret = Array_decodeBinaryLength(dst, out_length, ctx);
-    if(ret != UA_STATUSCODE_GOOD || *out_length == 0)
+    if((ret != UA_STATUSCODE_GOOD) || (*out_length == 0))
         return ret;
 
     /* Filter out arrays that can obviously not be decoded, because the message
