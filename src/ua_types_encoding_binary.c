@@ -485,10 +485,8 @@ Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
 
     /* Decode the length */
     status ret = Array_decodeBinaryLength(dst, &length, ctx);
-    if(ret != UA_STATUSCODE_GOOD || length == 0) {
-        *out_length = 0;
+    if(ret != UA_STATUSCODE_GOOD || length == 0)
         return ret;
-    }
 
     /* Filter out arrays that can obviously not be decoded, because the message
      * is too small for the array length. This prevents the allocation of very
