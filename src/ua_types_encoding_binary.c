@@ -481,15 +481,26 @@ Array_decodeBinaryLength(void *UA_RESTRICT *UA_RESTRICT dst,
 static status
 Array_decodeBinary(void *UA_RESTRICT *UA_RESTRICT dst, size_t *out_length,
                    const UA_DataType *type, Ctx *ctx) {
-    /* Decode the length */
-    status ret = Array_decodeBinaryLength(dst, out_length, ctx);
-    if((ret != UA_STATUSCODE_GOOD) || (*out_length == 0))
-        return ret;
+   /* Decode the length */
+   i32 signed_length;
+   status ret = DECODE_DIRECT(&signed_length, UInt32); /* Int32 */
+   if(ret != UA_STATUSCODE_GOOD)
+       return ret;
+
+   /* Return early for empty arrays */
+   if(signed_length <= 0) {
+       *out_length = 0;
+       if(signed_length < 0)
+           *dst = NULL;
+       else
+           *dst = UA_EMPTY_ARRAY_SENTINEL;
+       return UA_STATUSCODE_GOOD;
+   }
 
     /* Filter out arrays that can obviously not be decoded, because the message
      * is too small for the array length. This prevents the allocation of very
      * long arrays for bogus messages.*/
-    size_t length = *out_length;
+    size_t length = (size_t)signed_length;
     UA_CHECK(ctx->pos + ((type->memSize * length) / 32) <= ctx->end,
              return UA_STATUSCODE_BADDECODINGERROR);
 
